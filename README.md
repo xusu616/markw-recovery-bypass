@@ -28,6 +28,16 @@
 
 这是锁定 bootloader 下的**启动验证绕过，不是正式解锁**；`aboot` 与 `abootbak` 使用官方未修改的 Xiaomi 签名镜像，未获得设备专属解锁签名，`fastboot` 写入限制依然存在。
 
+## 仓库简明用法（备份 → 刷入 → 刷 ROM → 回滚）
+
+仓库中 `payloads/` 已保存通用的 `V8.0.5.0` `aboot`、`misc` 与 XML 配置；运行过程中生成的本机原厂备份位于 `local-only/markw-diagnosis-20261112/`（已在 `.gitignore` 忽略，含 `gpt-primary.bin`、`aboot.bin`、`abootbak.bin`、`devinfo.bin`、`recovery-original.bin` 等），建议另存本地或私密备份，不要上传到公开仓库
+
+1. **备份原机分区（9008 模式）**：断电池短接进入 9008 后运行 `python .\scripts\wait_and_dump_markw_gpt.py`，读取 GPT 并备份上述本机原始分区到 `local-only/markw-diagnosis-20261112/`
+2. **预处理尾块**：对需要引导的 TWRP 镜像运行 `python .\scripts\append-boot-footer.py <原镜像> <带尾块镜像>`，在页对齐结尾追加 4096 字节特定尾块
+3. **刷入绕过用 `aboot` 与初始 TWRP（9008 模式）**：运行 `python .\scripts\flash_markw_miui8_aboot_and_twrp.py` 一次性写入 `V8.0.5.0` `aboot`、`abootbak`、带尾块 Cofface TWRP 与 `misc`，完成后拔线扣回电池并单按电源键即可进入 TWRP（未刷第三方 ROM 前不要重启回原厂 MIUI）
+4. **切换 TWRP 与刷入 ROM**：若刷 Android 11~14 Treble ROM，先在当前 TWRP 下把带尾块的高版本 TWRP（如 `twrp_3.7.0_12-1-markw_by_SonicBSV_18_11_2023-appended.img`）写入 `recovery` 并 `adb reboot recovery` 切换，再 `Format Data`、清理 `cache`/`dalvik`/`system` 后刷入 ROM ZIP；**重启前**务必从 ROM ZIP 提取 `boot.img`，跑一次 `append-boot-footer.py` 生成带尾块版本并写回 `boot` 分区，同时确认 `misc` 为全零后再重启（后续刷 Magisk 或换内核也需重新补尾块）
+5. **回滚原厂引导（9008 模式）**：保持 `local-only/markw-diagnosis-20261112/` 备份完整，进 9008 运行 `python .\scripts\restore_markw_original_aboot.py` 即可还原出厂签名 `aboot` 与 `abootbak`（如需一并还原官方 Recovery，可再手动写回 `recovery-original.bin`）
+
 ## 已验证的组合与原理
 
 | 部件 | 本次使用的文件 | 状态 |
