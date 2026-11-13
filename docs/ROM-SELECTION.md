@@ -33,11 +33,11 @@
 ### 2. Treble 候选（较高 Android 版本，需先换支持 Treble 的带尾块 TWRP）
 
 - **LineageOS 17.1 / 18.1 / 19.1（Android 10 / 11 / 12L，SonicBSV 维护）**
-  - 来源：[AndroidFileHost SonicBSV 目录 (flid=330752)](https://www.androidfilehost.com/?w=files&flid=330752)
-  - 配套 Recovery：`twrp_3.7.0_12-1-markw_by_SonicBSV.img`（同目录，需先追加 4096 字节尾块）
+  - 来源：[AndroidFileHost SonicBSV 目录 (flid=339504)](https://androidfilehost.com/?w=files&flid=339504)
+  - 配套 Recovery：`twrp_3.7.0_12-1-markw_by_SonicBSV_18_11_2023.img` / `twrp_3.7.0_12-1-markw_by_SonicBSV.img`（同目录，需先追加 4096 字节尾块）
 - **crDroid v6.12（Android 10）/ v9.11（Android 13）/ v10.6（Android 14）**
   - Android 10 来源：[SourceForge crdroid-markw](https://sourceforge.net/projects/crdroid-markw/files/)（需 TWRP 3.4.0-1）
-  - Android 13/14 来源：[AndroidFileHost SonicBSV 目录 (flid=330752)](https://www.androidfilehost.com/?w=files&flid=330752)（需 SonicBSV TWRP 3.7.0）
+  - Android 13/14 来源：[AndroidFileHost SonicBSV 目录 (flid=339504)](https://androidfilehost.com/?w=files&flid=339504)（需 SonicBSV TWRP 3.7.0）
 - **Pixel Experience Plus 9.0（Android 9.0）**
   - 来源：[SourceForge Pixel Experience Plus markw](https://sourceforge.net/projects/pixel-experience-plus-edition-markw/files/)
 - **Havoc-OS v3.0（Android 10）**
