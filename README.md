@@ -2,6 +2,26 @@
 
 [English](README.en.md)
 
+**English version may not have this**
+
+官方解锁服务器关了，所以是9008的方案
+
+这台手机屏蔽了9008线所以只能拆机
+
+稍后传个test引脚图
+
+当然我现在很懒
+
+所以README甚至都是ai写的（（
+
+其他要注意的（？：
+
+需要把指纹和后盖扣回再重启才有指纹
+
+然后就是kernelsu最多用0.9.5的，否则不会支持，如果版本对了还不支持就下个更低版本的kernelSu然后覆盖安装，应该就能扫到了
+
+**Eng have those below the comment**
+
 2026-11-12 ~ 2026-11-13 实测 Redmi 4 Prime（红米 4 高配版，代号 `markw`，Snapdragon 625 / MSM8953），原系统 MIUI 8（`V8.2.1.0` 系列 `aboot`）。
 
 这是锁定 bootloader 下的**启动验证绕过，不是正式解锁**；`aboot` 与 `abootbak` 使用官方未修改的 Xiaomi 签名镜像，未获得设备专属解锁签名，`fastboot` 写入限制依然存在。
