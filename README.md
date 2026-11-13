@@ -4,6 +4,8 @@
 
 **English version may not have this**
 
+![markw 主板排线与 9008 短接点标注](docs/images/markw-9008-testpoint.jpg)
+
 官方解锁服务器关了，所以是9008的方案
 
 这台手机屏蔽了9008线所以只能拆机
