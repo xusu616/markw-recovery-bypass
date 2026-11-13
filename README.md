@@ -1,93 +1,125 @@
-# markw-recovery-bypass
+# Redmi 4 Prime / markw：9008 引导绕过与 TWRP 安装记录
 
+[English](README.en.md)
 
+2026-11-12 ~ 2026-11-13 实测 Redmi 4 Prime（红米 4 高配版，代号 `markw`，Snapdragon 625 / MSM8953），原系统 MIUI 8（`V8.2.1.0` 系列 `aboot`）。
 
-## Getting started
+这是锁定 bootloader 下的**启动验证绕过，不是正式解锁**；`aboot` 与 `abootbak` 使用官方未修改的 Xiaomi 签名镜像，未获得设备专属解锁签名，`fastboot` 写入限制依然存在。
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 已验证的组合与原理
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+| 部件 | 本次使用的文件 | 状态 |
+| --- | --- | --- |
+| `aboot` / `abootbak` | MIUI 8 `V8.0.5.0.MBECNDG` 原始小米签名 MBN（尾部补零到 1 MiB） | 已通过 9008 刷入并验证启动 |
+| 初始 recovery | `cofface_twrp_recovery_markw_1121-appended.img`（追加 4096 字节尾块） | 已成功启动至 TWRP（ADB root 正常） |
+| 引导触发辅助 | `misc-boot-recovery-512B.bin`（写入 `boot-recovery\0` 到 `misc` 分区） | 已实测直接进 TWRP，启动后已自动清零 |
+| 通用尾块脚本 | `scripts/append-boot-footer.py` | 已用于生成带尾块 recovery；后续用于 ROM `boot.img` |
+| ROM | 待选择并刷入（见 [ROM-SELECTION.md](docs/ROM-SELECTION.md)） | 待实测 |
 
-## Add your files
+在 Android `boot` / `recovery` v0 镜像有效数据段页对齐结尾追加 4096 字节（前 5 字节 `30 83 19 89 64`，其余为零）后，原机 `V8.2.1.0` `aboot` 无法正常启动；换用官方未修改签名的 `MIUI V8.0.5.0.MBECNDG` `aboot` 后，实测可正常引导带尾块镜像。
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+任何 ROM 安装、换内核或 Magisk 修补 `boot.img` 若重新打包镜像，都会丢失尾块。正确顺序：**完成所有 `boot` 修补 → 检查镜像 → 追加尾块 → 写入 `boot` 分区 → 重启**。
 
+## 目录和来源
+
+本地仓库：`D:\Project\markw-recovery-bypass`
+
+```text
+README.md / README.en.md  中文与英文指南
+LICENSE                   MIT 许可证
+scripts/                  9008 备份/烧录与尾块处理脚本
+payloads/                 V8.0.5.0 aboot、misc 触发镜像、rawprogram XML
+roms/                     markw TWRP 与待刷 ROM（二进制默认不提交）
+tools/                    emmcdl 2.16、MSM8953 Firehose（二进制默认不提交）
+docs/                     诊断与 ROM 选型记录
+local-only/               本机原始备份与日志，不提交
+SHA256SUMS.txt            工具及镜像校验值
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/xusu616/markw-recovery-bypass.git
-git branch -M main
-git push -uf origin main
+
+技术细节见 [BOOTLOADER-DIAGNOSIS.md](docs/BOOTLOADER-DIAGNOSIS.md)，ROM 候选说明见 [ROM-SELECTION.md](docs/ROM-SELECTION.md)。
+
+## 1. EDL 布局与原始备份
+
+Redmi 4 Prime（`markw` / MSM8953，512 字节扇区）关键分区 GPT 偏移（来自本机 `01-read-gpt.log`）：
+
+| 分区 | 起始 LBA | 扇区数 | 大小 |
+| --- | ---: | ---: | ---: |
+| `aboot` | 786432 | 2048 | 1 MiB |
+| `abootbak` | 788480 | 2048 | 1 MiB |
+| `boot` | 790528 | 131072 | 64 MiB |
+| `recovery` | 921600 | 131072 | 64 MiB |
+| `devinfo` | 1052672 | 2048 | 1 MiB |
+| `misc` | 8060928 | 2048 | 1 MiB |
+| `cust` | 8651792 | 1048576 | 512 MiB |
+
+只读诊断与备份脚本：
+
+```powershell
+Set-Location D:\Project\markw-recovery-bypass
+python .\scripts\wait_and_dump_markw_gpt.py
 ```
 
-## Integrate with your tools
+原始 `gpt-primary.bin`、`aboot.bin`、`abootbak.bin`、`devinfo.bin`、`recovery-original.bin` 均已保存在 `local-only/markw-diagnosis-20261112/`。
 
-* [Set up project integrations](https://gitlab.com/xusu616/markw-recovery-bypass/-/settings/integrations)
+## 2. 离线生成与校验镜像
 
-## Collaborate with your team
+```powershell
+python .\scripts\prepare-images.py aboot .\payloads\emmc_appsboot-miui8-v8050-original.mbn .\payloads\aboot-miui8-v8050-signed-1MiB.bin
+python .\scripts\append-boot-footer.py .\roms\cofface_twrp_recovery_markw_1121.img .\roms\cofface_twrp_recovery_markw_1121-appended.img
+python .\scripts\prepare-images.py misc .\payloads\misc-boot-recovery-512B.bin
+```
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+输出已存在时脚本会拒绝覆盖。
 
-## Test and Deploy
+## 3. EDL 单次原子写入 `aboot` + `TWRP` + `misc`
 
-Use the built-in continuous integration in GitLab.
+在单个 `emmcdl` XML 会话中连续写入 `aboot`、`abootbak`、`recovery` 与 `misc`：
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+```powershell
+# 首次全量写入（aboot + abootbak + recovery + misc）：
+python .\scripts\flash_markw_miui8_aboot_and_twrp.py
 
-***
+# 若 aboot 已为 V8.0.5.0，仅重刷 TWRP 与 misc：
+python .\scripts\flash_markw_miui8_aboot_and_twrp.py --twrp-only
+```
 
-# Editing this README
+烧录完成后：
+1. 拔掉 USB 数据线，扣紧电池排线；
+2. 无需按音量组合键，直接按一次电源键开机即可直接进入 Cofface TWRP；
+3. 进入 TWRP 后检查 `misc` 是否已清零（本版本 TWRP 启动时会自动清零；若未清零，执行 `adb shell "dd if=/dev/zero of=/dev/block/bootdevice/by-name/misc bs=512 count=1"`）。
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+注意：**不要在未刷自定义 ROM 前重启进原版 MIUI**，否则 MIUI 开机脚本会将 `recovery` 还原为官方版。
 
-## Suggestions for a good README
+## 4. 刷入 ROM 与保留尾块（下一步）
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+1. 按 [ROM-SELECTION.md](docs/ROM-SELECTION.md) 选择 Non-Treble 或 Treble ROM（若选择 Treble ROM，需先在当前 TWRP 下用带尾块的 Treble TWRP 替换 `recovery` 并重启到新 TWRP）。
+2. 在 TWRP 中执行清理并安装 ROM ZIP。
+3. **重启前**，从 ROM ZIP 提取 `boot.img`，生成带尾块版本并写入 `boot` 分区：
+   ```powershell
+   python .\scripts\append-boot-footer.py .\roms\<rom-boot-original>.img .\roms\<rom-boot-appended>.img
+   adb push .\roms\<rom-boot-appended>.img /tmp/boot-appended.img
+   adb shell "sha256sum /tmp/boot-appended.img"
+   adb shell "dd if=/tmp/boot-appended.img of=/dev/block/bootdevice/by-name/boot bs=4096"
+   adb shell sync
+   ```
+4. 确认写回无误后再执行 `adb reboot`。
 
-## Name
-Choose a self-explaining name for your project.
+## 关键 SHA-256
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+| 文件 | SHA-256 |
+| --- | --- |
+| `payloads/emmc_appsboot-miui8-v8050-original.mbn` | `ba0294d98ddb7d16b3df16b7c5bae0807550e06cbe28babe0cb6fad487e281a3` |
+| `payloads/aboot-miui8-v8050-signed-1MiB.bin` | `cff1766fc4e6d3db7a9a0b17d24019e09856aeed029fb43a94982bca7d7a60cc` |
+| `payloads/misc-boot-recovery-512B.bin` | `9418492e5b413376d2927de020eecc19a0be271687c4edb6437b7ce7268a2171` |
+| `roms/cofface_twrp_recovery_markw_1121.img` | `6599cbbda6b7d2510e8caa8ac2817e49cc6fb7403c877e3d08ddd28ce7af701e` |
+| `roms/cofface_twrp_recovery_markw_1121-appended.img` | `dfd363b80ea169621230ab33fefa049d60b99036e757cad35374cc2b7c9b3218` |
+| `tools/emmcdl-2.16.exe` | `24540d815142a3d63c4bf4a01fd4db0c0aefb26794749d65480ce0a9f2bc83bb` |
+| `tools/prog_emmc_firehose_8953_ddr.mbn` | `8e7c2f3c6ad93eb1383b1f9d476d18466c32adde13c3e8b5c46e4ceeea40a6a4` |
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+## 故障与回退
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- **恢复原厂签名引导**：确保 `local-only/markw-diagnosis-20261112/` 下的 `aboot.bin` 与 `abootbak.bin` 备份完整，在 9008 模式下运行：
+  ```powershell
+  python .\scripts\restore_markw_original_aboot.py
+  ```
+- **900E / 无法开机**：断开电池排线数秒后重新扣回电池并尝试开机或重进 9008 核对分区内容。

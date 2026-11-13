@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<data>
+  <!-- Redmi 4 Prime (markw / MSM8953) Atomic Flash: Appended TWRP + misc boot-recovery flag -->
+  <program SECTOR_SIZE_IN_BYTES="512" file_sector_offset="0" filename="cofface_twrp_recovery_markw_1121-appended.img" label="recovery" num_partition_sectors="57636" physical_partition_number="0" size_in_KB="28818.0" sparse="false" start_sector="921600"/>
+  <program SECTOR_SIZE_IN_BYTES="512" file_sector_offset="0" filename="misc-boot-recovery-512B.bin" label="misc" num_partition_sectors="1" physical_partition_number="0" size_in_KB="0.5" sparse="false" start_sector="8060928"/>
+</data>
