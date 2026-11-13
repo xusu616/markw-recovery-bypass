@@ -1,6 +1,6 @@
 # Redmi 4 Prime（`markw`）ROM 选型记录
 
-> 当前状态（2026-11-13）：已完成 `MIUI V8.0.5.0.MBECNDG` `aboot` + `cofface_twrp_recovery_markw_1121-appended.img` 刷入并成功进入 TWRP（ADB root 正常，`/data` 可用 `22.4 GiB`，`misc` 已清零）。尚未刷入新 ROM。
+> 当前状态（2026-11-13）：已完成 `MIUI V8.0.5.0.MBECNDG` `aboot`、Cofface TWRP 过渡、SonicBSV `TWRP 3.7.0_12-1`（已补尾块）以及 `crDroidAndroid-14.0-20240803-markw-v10.6.zip`（`boot.img` 已补尾块）刷入并成功进入 Android 14 系统；系统默认未开启 FBE（`ro.crypto.state=unsupported`），内核内建 KernelSU，搭配官方 `v0.9.5` 管理器可正常识别。
 
 ## 一、Non-Treble 与 Treble 分区差异
 
