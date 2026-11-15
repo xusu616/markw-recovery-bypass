@@ -1,3 +1,5 @@
+> 📦 **Release 下载提示**：请前往对应的 GitLab 仓库查看或下载 Release（GitHub 端暂不重复上传）👉 [https://gitlab.com/xusu616/markw-recovery-bypass/-/releases](https://gitlab.com/xusu616/markw-recovery-bypass/-/releases) （[GitLab 仓库主页](https://gitlab.com/xusu616/markw-recovery-bypass)）
+
 # Redmi 4 Prime / markw：9008 引导绕过与 TWRP 安装记录
 
 [English](README.en.md)
